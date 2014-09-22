@@ -63,7 +63,7 @@ end
 module Kernel
   def receive(input = nil, output = nil, &block)
     input ||= IO.new(3)
-    output ||= IO.new(4)
+    output ||= IO.new(4,'wb')
     Erlectricity::Receiver.new(Erlectricity::Port.new(input, output), nil, &block).run
   end
 end
