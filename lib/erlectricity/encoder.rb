@@ -27,10 +27,13 @@ module Erlectricity
         when Erlectricity::NewReference then write_new_reference(obj)
         when Erlectricity::Pid then write_pid(obj)
         when Erlectricity::List then write_list(obj)
-        when Array then write_tuple(obj)
+        when Erlectricity::Tuple then write_tuple(obj)
+        when Hash then write_map(obj)
+        when Array then write_list(obj)
         when String then write_binary(obj)
-        when Time then write_any_raw(obj.to_i.divmod(1000000) + [obj.usec])
+        when Time then write_any_raw(Erlectricity::Tuple.new(obj.to_i.divmod(1000000) + [obj.usec]))
         when TrueClass, FalseClass then write_boolean(obj)
+        when nil then write_nil
         else
           fail(obj)
       end
@@ -54,6 +57,10 @@ module Erlectricity
 
     def write_boolean(bool)
       write_symbol(bool.to_s.to_sym)
+    end
+
+    def write_nil
+      write_symbol(:nil)
     end
 
     def write_symbol(sym)
@@ -147,6 +154,14 @@ module Erlectricity
       write_4 data.length
       data.each{|e| write_any_raw e }
       write_1 NIL
+    end
+
+    def write_map(data)
+      fail(data) unless data.is_a? Hash
+      write_1 NIL and return if data.empty?
+      write_1 MAP
+      write_4 data.length
+      data.to_a.flatten(1).each{|e| write_any_raw e}
     end
 
     def write_binary(data)

@@ -32,6 +32,7 @@ module Erlectricity
         when NIL then read_nil
         when STRING then read_erl_string
         when LIST then read_list
+        when MAP then read_map
         when BIN then read_bin
         else
           fail("Unknown term tag: #{peek_1}")
@@ -197,6 +198,13 @@ module Erlectricity
       list = (0...length).map { |i| read_any_raw }
       read_1
       Erlectricity::List.new(list)
+    end
+
+    def read_map
+      fail("Invalid Type, not an erlang map") unless read_1 == MAP
+      length = read_4 * 2
+      list = (0...length).map { |i| read_any_raw }
+      Hash[*list]
     end
 
     def read_bin

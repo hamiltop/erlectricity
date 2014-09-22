@@ -58,7 +58,8 @@ end
 
 task :default => :test
 
-require 'rake/rdoctask'
+require 'rdoc/task'
+require 'yaml'
 Rake::RDocTask.new do |rdoc|
   if File.exist?('VERSION.yml')
     config = YAML.load(File.read('VERSION.yml'))

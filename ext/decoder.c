@@ -20,6 +20,7 @@
 #define ERL_BIN           109
 #define ERL_FUN           117
 #define ERL_NEW_FUN       112
+#define ERL_MAP           116
 
 static VALUE mErlectricity;
 static VALUE cDecoder;
@@ -34,11 +35,17 @@ VALUE read_any_raw(unsigned char **pData);
 void check_int(int num) {
   char buf[17];
   sprintf(buf, "%u", num);
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wformat-security"
   rb_raise(rb_eStandardError, buf);
+  #pragma GCC diagnostic pop
 }
 
 void check_str(char *str) {
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wformat-security"
   rb_raise(rb_eStandardError, str);
+  #pragma GCC diagnostic pop
 }
 
 // string peekers/readers
@@ -129,6 +136,22 @@ VALUE read_list(unsigned char **pData) {
   return array;
 }
 
+VALUE read_map(unsigned char **pData) {
+  if(read_1(pData) != ERL_MAP) {
+    rb_raise(rb_eStandardError, "Invalid Type, not an erlang list");
+  }
+
+  unsigned int arity = read_4(pData);
+
+  VALUE hash = rb_hash_new();
+
+  int i;
+  for(i = 0; i < arity; ++i) {
+    rb_hash_aset(hash, read_any_raw(pData), read_any_raw(pData));
+  }
+
+  return hash;
+}
 // primitives
 
 void read_string_raw(unsigned char *dest, unsigned char **pData, unsigned int length) {
@@ -159,8 +182,8 @@ VALUE read_string(unsigned char **pData) {
   VALUE newref_class = rb_const_get(mErlectricity, rb_intern("List"));
   VALUE array = rb_funcall(newref_class, rb_intern("new"), 1, INT2NUM(length));
 
-  int i = 0;
-  for(i; i < length; ++i) {
+  int i;
+  for(i = 0; i < length; ++i) {
     rb_ary_store(array, i, INT2NUM(**pData));
     *pData += 1;
   }
@@ -205,7 +228,7 @@ VALUE read_int(unsigned char **pData) {
 
   long long value = read_4(pData);
 
-  long long negative = ((value >> 31) & 0x1 == 1);
+  long long negative = ((value >> 31) & 0x1) == 1;
 
   if(negative) {
     value = (value - ((long long) 1 << 32));
@@ -373,6 +396,9 @@ VALUE read_any_raw(unsigned char **pData) {
       break;
     case ERL_NEW_REF:
       return read_new_reference(pData);
+      break;
+    case ERL_MAP:
+      return read_map(pData);
       break;
   }
   return Qnil;

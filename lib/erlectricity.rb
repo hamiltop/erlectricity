@@ -7,6 +7,7 @@ require 'erlectricity/types/new_reference'
 require 'erlectricity/types/pid'
 require 'erlectricity/types/function'
 require 'erlectricity/types/list'
+require 'erlectricity/types/tuple'
 
 begin
   # try to load the decoder C extension

@@ -21,6 +21,7 @@ module Erlectricity
       NIL = 106
       STRING = 107
       LIST = 108
+      MAP = 116 
       BIN = 109
 
       FUN = 117
